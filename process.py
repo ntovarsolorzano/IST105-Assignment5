@@ -1,73 +1,66 @@
 #!/usr/bin/env python3
-
-import cgi
-import cgitb
+import sys
 import math
 import random
-import sys
-import os
-from urllib.parse import urlencode
 
-cgitb.enable()
+# --- Function Definitions ---
 
-def number_puzzle(number):
-    """Checks if a number is even or odd and performs calculations."""
-    try:
-        number = int(number)
-        if number % 2 == 0:
-            result = f"The number {number} is even. Its square root is {math.sqrt(number)}"
-        else:
-            result = f"The number {number} is odd. Its cube is {number ** 3}"
-        return result
-    except ValueError:
-        return "Invalid number. Please enter a valid integer."
+def number_puzzle(num):
+    """Processes the number puzzle."""
+    if num % 2 == 0:  # Even
+        return f"The number is even.  Square root: {math.sqrt(num):.2f}"
+    else:  # Odd
+        return f"The number is odd.  Cube: {num ** 3}"
 
 def text_puzzle(text):
-    """Converts text to binary and counts vowels."""
+    """Processes the text puzzle."""
     binary_text = ' '.join(format(ord(char), '08b') for char in text)
-    vowels = "aeiouAEIOU"
-    vowel_count = sum(1 for char in text if char in vowels)
-    return binary_text, vowel_count
+    vowel_count = sum(1 for char in text.lower() if char in 'aeiou')
+    return f"Binary: {binary_text}\nVowel Count: {vowel_count}"
 
 def treasure_hunt():
-    """Simulates a treasure hunt guessing game."""
+    """Simulates the treasure hunt game."""
     secret_number = random.randint(1, 100)
-    guesses_left = 5
-    guessed_correctly = False
+    attempts = 0
+    won = False
+    guesses = []  # List to store the guesses
 
-    while guesses_left > 0:
-        #Simulate user guessing
-        guess = random.randint(1,100)
+    while attempts < 5 and not won:
+        attempts += 1
+        guess = random.randint(1, 100)
+        guesses.append(guess)  # Add the guess to the list
+
         if guess == secret_number:
-            guessed_correctly = True
-            break
-        guesses_left -= 1
+            won = True
 
-    if guessed_correctly:
-        return "Congratulations! You found the treasure!"
+    if won:
+        return f"You won the treasure in {attempts} attempts!\nGuesses: {', '.join(map(str, guesses))}" # Show guesses
     else:
-        return f"Sorry, you ran out of guesses. The number was {secret_number}."
+        return f"You didn't find the treasure. The number was {secret_number}.\nGuesses: {', '.join(map(str, guesses))}" # Show guesses
 
-# Main execution block
-if __name__ == "__main__":
-    form = cgi.FieldStorage()
-    number = form.getvalue("number")
-    text = form.getvalue("text")
 
-    number_result = number_puzzle(number)
-    text_binary, vowel_count = text_puzzle(text)
-    treasure_result = treasure_hunt()
+# --- Main Script Logic ---
 
-    # Prepare the URL with the results
-    query_string = urlencode({
-        "number_result": number_result,
-        "text_binary": text_binary,
-        "vowel_count": vowel_count,
-        "treasure_result": treasure_result
-    })
+# Get arguments from the command line
+if len(sys.argv) != 3:
+    print("Error: Incorrect number of arguments.")
+    sys.exit(1)
 
-    # Redirect back to the PHP page with the results in the URL
-    print("Content-Type: text/html") # HTTP header
-    print() # Blank line to separate headers from content
-    print(f"<meta http-equiv='refresh' content='0;url=form.php?{query_string}'>")
-    print("<p>Redirecting...</p>")  # Optional message while redirecting
+try:
+    number = int(sys.argv[1])
+    text = sys.argv[2]
+except ValueError:
+    print("Error: Invalid number input.")
+    sys.exit(1)
+except IndexError:
+    print("Error: Missing arguments")
+    sys.exit(1)
+
+# Process the puzzles
+number_result = number_puzzle(number)
+text_result = text_puzzle(text)
+treasure_result = treasure_hunt()
+
+# Combine results and print
+all_results = f"{number_result}\n\n{text_result}\n\n{treasure_result}"
+print(all_results)
